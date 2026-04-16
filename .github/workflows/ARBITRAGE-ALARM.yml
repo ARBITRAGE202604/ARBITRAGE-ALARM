@@ -1,0 +1,27 @@
+name: 테더 알람 (5분마다)
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # 5분마다 실행
+  workflow_dispatch:        # 수동으로도 테스트 가능
+
+jobs:
+  check_tether:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+      
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: 필요한 패키지 설치
+        run: pip install requests
+      
+      - name: 알람 스크립트 실행
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: python main.py
