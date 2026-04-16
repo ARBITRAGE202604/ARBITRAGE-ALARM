@@ -1,0 +1,27 @@
+name: 테더 차이 알람
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'     # 5분마다 실행
+  workflow_dispatch:          # 수동으로 테스트할 때 사용
+
+jobs:
+  check_tether:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 저장소 코드 가져오기
+        uses: actions/checkout@v4
+      
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: requests 라이브러리 설치
+        run: pip install requests
+      
+      - name: 테더 가격 체크 및 알람
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: python main.py
