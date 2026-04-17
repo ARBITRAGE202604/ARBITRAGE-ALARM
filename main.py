@@ -1,6 +1,3 @@
-네, 전체 코드 드립니다. 토큰 캐싱도 추가했어요 (1분 발급 제한 대응).
-
-```python
 import requests
 import os
 import json
@@ -167,14 +164,3 @@ if __name__ == "__main__":
                               json={"content": f"⚠️ 스크립트 오류: {str(e)[:500]}"})
             except Exception:
                 pass
-```
-
-## 🔑 주요 변경사항
-
-| 항목 | 내용 |
-|------|------|
-| **종목코드** | `175T` + 월물코드(1자) + 연도(2자), 세번째 월요일 기준 롤오버 |
-| **엔드포인트** | `domestic-futureoption` (하이픈 수정) |
-| **파라미터** | `FID_COND_MRKT_DIV_CODE=F`, `FID_INPUT_ISCD=종목코드` |
-| **tr_id** | `FHMIF10000000` (선물옵션 시세) |
-| **토큰 캐싱** | `
