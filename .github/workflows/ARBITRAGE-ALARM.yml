@@ -16,12 +16,12 @@ jobs:
       - name: Python 설치
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       
-      - name: requests 설치
+      - name: requests 라이브러리 설치
         run: pip install requests
       
-      - name: 테더 알람 실행
+      - name: 테더 가격 체크 및 알람
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           APP_KEY: ${{ secrets.APP_KEY }}
