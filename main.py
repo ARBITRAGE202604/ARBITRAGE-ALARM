@@ -1,27 +1,42 @@
 import requests
 import os
+import json
 
 # ==================== 설정 ====================
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 APP_KEY = os.getenv("APP_KEY")
 APP_SECRET = os.getenv("APP_SECRET")
-THRESHOLD = float(os.getenv("THRESHOLD", "5"))   # ← 여기서 기본값 5원, Secret으로도 변경 가능
+THRESHOLD = float(os.getenv("THRESHOLD", "5"))
 # ============================================
 
 def get_access_token():
-    """한국투자증권 토큰 발급"""
+    """한국투자증권 토큰 발급 (수정 버전)"""
     url = "https://openapi.koreainvestment.com:9443/oauth2/tokenP"
-    data = {
+    
+    headers = {
+        "content-type": "application/json"
+    }
+    
+    body = {
         "grant_type": "client_credentials",
         "appkey": APP_KEY,
         "appsecret": APP_SECRET
     }
-    resp = requests.post(url, json=data)
-    return resp.json()["access_token"]
+    
+    resp = requests.post(url, headers=headers, json=body)
+    response_data = resp.json()
+    
+    print("토큰 응답:", json.dumps(response_data, indent=2, ensure_ascii=False))
+    
+    if "access_token" in response_data:
+        return response_data["access_token"]
+    else:
+        raise Exception(f"토큰 발급 실패: {response_data}")
 
 def get_usd_futures_price():
-    """한국투자증권 원달러 선물 가격 가져오기"""
+    """원달러 선물 가격 가져오기"""
     access_token = get_access_token()
+    
     url = "https://openapi.koreainvestment.com:9443/uapi/domestic-future-option/v1/quotations"
     
     headers = {
@@ -29,20 +44,26 @@ def get_usd_futures_price():
         "authorization": f"Bearer {access_token}",
         "appkey": APP_KEY,
         "appsecret": APP_SECRET,
-        "tr_id": "FUTU"          # 국내선물 현재가
+        "tr_id": "FUTU",           # 국내선물호가
+        "tr_cont": ""
     }
     
-    body = {"futCd": "USD"}      # 미국달러선물 코드
+    params = {
+        "futCd": "USD"             # 달러선물
+    }
     
-    resp = requests.post(url, headers=headers, json=body)
-    data = resp.json().get("output", {})
+    resp = requests.get(url, headers=headers, params=params)   # GET으로 변경
+    data = resp.json()
     
-    # 가격 필드 (실제 응답에 따라 stck_prpr 또는 bspr 등)
-    price = float(data.get("stck_prpr") or data.get("prpr") or 0)
-    return round(price, 2)
+    print("선물 가격 응답:", json.dumps(data, indent=2, ensure_ascii=False))
+    
+    if "output" in data:
+        price = float(data["output"].get("stck_prpr") or data["output"].get("prpr") or 0)
+        return round(price, 2)
+    else:
+        raise Exception(f"가격 조회 실패: {data}")
 
 def get_bithumb_usdt():
-    """빗썸 USDT/KRW 가격"""
     url = "https://api.bithumb.com/public/ticker/USDT_KRW"
     data = requests.get(url).json()
     return float(data["data"]["closing_price"])
@@ -62,13 +83,13 @@ try:
     futures_price = get_usd_futures_price()
     difference = round(bithumb_usdt - futures_price, 2)
     
-    print(f"빗썸 USDT: {bithumb_usdt} | 원달러 선물: {futures_price} | 차이: {difference}원")
+    print(f"✅ 빗썸 USDT: {bithumb_usdt} | 원달러 선물: {futures_price} | 차이: {difference}원")
     
     if difference >= THRESHOLD:
         send_discord(difference, bithumb_usdt, futures_price)
         print("✅ 알람 전송 완료")
     else:
-        print("알람 조건 미달")
+        print("ℹ️ 알람 조건 미달")
         
 except Exception as e:
-    print("오류 발생:", e)
+    print("❌ 오류 발생:", str(e))
